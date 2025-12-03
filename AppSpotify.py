@@ -99,6 +99,15 @@ columns_to_drop.extend([
 df = df.drop(columns=columns_to_drop, errors='ignore')
 st.dataframe(df.head())
 
+df["Spotify Streams"] = (
+    df["Spotify Streams"]
+    .astype(str)
+    .str.replace(",", "", regex=False)
+    .str.replace(".", "", regex=False)
+)
+
+df["Spotify Streams"] = pd.to_numeric(df["Spotify Streams"], errors="coerce")
+
 # -------------------------
 # 8. Resultado final
 # -------------------------
