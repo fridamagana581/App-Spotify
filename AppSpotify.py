@@ -96,16 +96,18 @@ df["Spotify Streams"] = (
 
 df["Spotify Streams"] = pd.to_numeric(df["Spotify Streams"], errors="coerce")
 
-# Crear columna de año (sin comas, sin errores)
+# Crear columna Year correctamente
 df["Year"] = df["Release Date"].dt.year.astype(int)
 
-# Mostrar dataset final limpio
+# -------------------------
+# Mostrar dataset limpio - EN EL LUGAR CORRECTO
+# -------------------------
+
 st.header("📂 Dataset limpio (General) - Después de la limpieza")
-st.dataframe(df.head())
+st.dataframe(df)
 
-# Mensaje de éxito (EN EL LUGAR CORRECTO)
+# Mensaje de éxito
 st.success("¡Limpieza completada con éxito! 🎉")
-
 
 # ---------------------------------------
 # 9. Sidebar con Filtros
@@ -132,7 +134,7 @@ streams_range = st.sidebar.slider(
     value=(streams_min, streams_max)
 )
 
-# Filtro género si existe
+# Filtro género
 if "Genre" in df.columns:
     genre_list = ["Todos"] + sorted(df["Genre"].dropna().unique())
     genre_selected = st.sidebar.selectbox("Seleccionar género:", genre_list)
@@ -164,6 +166,7 @@ else:
 # ---------------------------------------
 # 11. Aplicar filtros
 # ---------------------------------------
+
 df_filtered = df.copy()
 
 if artist_selected != "Todos":
@@ -216,6 +219,10 @@ else:
 # Streams por año
 st.subheader("📅 Streams por año")
 year_group = df_filtered.groupby("Year")["Spotify Streams"].sum()
+
+# 🔥 CORRECCIÓN IMPORTANTE: asegurar que los años sean enteros sin comas
+year_group.index = year_group.index.astype(int)
+
 if len(year_group) > 0:
     st.line_chart(year_group)
 else:
