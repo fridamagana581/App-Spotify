@@ -5,12 +5,12 @@ import pandas as pd
 # CONFIGURACIÓN DE PÁGINA
 # -----------------------------
 st.set_page_config(layout="wide")
-st.title("🎵 Spotify Analytics Dashboard – Dataset Limpio + Tops con Filtros")
+st.title("🎵 Spotify Analytics Dashboard – Limpieza + Tops con Filtros")
 
 st.write("""
-Esta aplicación carga, limpia y analiza el dataset **Most Streamed Spotify Songs 2024**, 
-y presenta 4 análisis tipo *Top 10*, todos con los mismos filtros:  
-**Artista, Año, Streams y Track Score**.
+Esta app carga, limpia y analiza el dataset **Most Streamed Spotify Songs 2024**, 
+y muestra 4 análisis tipo *Top 10*, filtrables por:  
+**Artista, Año, Streams y Track Score.**
 """)
 
 
@@ -24,44 +24,49 @@ st.dataframe(df.head())
 
 
 # -----------------------------
-# 2. PROCESO DE LIMPIEZA
+# 2. LIMPIEZA DEL DATASET
 # -----------------------------
 st.header("2. Limpieza del dataset")
 
-# Convertir Release Date a datetime si existe
-if "Release Date" in df.columns:
-    df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
-
-# Convertir Release Year si no es numérico
+# Convertir Release Year
 if "Release Year" in df.columns:
     df["Release Year"] = pd.to_numeric(df["Release Year"], errors="coerce")
 
-# Limpiar Spotify Streams
+# Convertir Spotify Streams
 if "Spotify Streams" in df.columns:
     df["Spotify Streams"] = (
-        df["Spotify Streams"]
-        .astype(str)
-        .str.replace(",", "")
-        .str.replace(".", "")
+        df["Spotify Streams"].astype(str).str.replace(",", "").str.replace(".", "")
     )
     df["Spotify Streams"] = pd.to_numeric(df["Spotify Streams"], errors="coerce")
 
-# Limpiar YouTube Views
+# Convertir YouTube Views
 if "YouTube Views" in df.columns:
     df["YouTube Views"] = (
         df["YouTube Views"].astype(str).str.replace(",", "").str.replace(".", "")
     )
     df["YouTube Views"] = pd.to_numeric(df["YouTube Views"], errors="coerce")
 
-# Limpiar TikTok Posts
+# Convertir TikTok Posts
 if "TikTok Posts" in df.columns:
     df["TikTok Posts"] = (
         df["TikTok Posts"].astype(str).str.replace(",", "").str.replace(".", "")
     )
     df["TikTok Posts"] = pd.to_numeric(df["TikTok Posts"], errors="coerce")
 
-# Eliminar filas con NaN en columnas clave
-cols_required = ["Artist Name", "Release Year", "Spotify Streams", "Track Score"]
+# -----------------------------
+# 2.1 COLUMNAS OBLIGATORIAS (REVISADAS)
+# -----------------------------
+cols_required = [
+    "Artist Name",
+    "Track Name",
+    "Release Year",
+    "Spotify Streams",
+    "Track Score"
+]
+
+# 🔥 Filtrar SOLO columnas que sí existan (para evitar errores)
+cols_required = [col for col in cols_required if col in df.columns]
+
 df = df.dropna(subset=cols_required)
 
 st.success("Dataset limpiado correctamente ✔")
@@ -69,15 +74,15 @@ st.dataframe(df.head())
 
 
 # -----------------------------
-# 3. SIDEBAR − FILTROS
+# 3. SIDEBAR – FILTROS
 # -----------------------------
 st.sidebar.header("Filtros")
 
-# Filtro artista
-artists = ["Todos"] + sorted(df["Artist Name"].dropna().unique())
+# Filtro Artista
+artists = ["Todos"] + sorted(df["Artist Name"].unique())
 filter_artist = st.sidebar.selectbox("Filtrar por artista:", artists)
 
-# Filtro año
+# Filtro Año
 years = ["Todos"] + sorted(df["Release Year"].dropna().unique())
 filter_year = st.sidebar.selectbox("Filtrar por año:", years)
 
@@ -89,7 +94,7 @@ filter_streams = st.sidebar.slider(
     "Filtrar por rango de Spotify Streams:",
     min_value=min_streams,
     max_value=max_streams,
-    value=(min_streams, max_streams),
+    value=(min_streams, max_streams)
 )
 
 # Filtro Track Score
@@ -100,12 +105,12 @@ filter_score = st.sidebar.slider(
     "Filtrar por rango de Track Score:",
     min_value=min_score,
     max_value=max_score,
-    value=(min_score, max_score),
+    value=(min_score, max_score)
 )
 
 
 # -----------------------------
-# 4. APLICAR FILTROS AL DATASET
+# 4. APLICAR FILTROS
 # -----------------------------
 df_filtered = df.copy()
 
@@ -116,13 +121,13 @@ if filter_year != "Todos":
     df_filtered = df_filtered[df_filtered["Release Year"] == filter_year]
 
 df_filtered = df_filtered[
-    (df_filtered["Spotify Streams"] >= filter_streams[0])
-    & (df_filtered["Spotify Streams"] <= filter_streams[1])
+    (df_filtered["Spotify Streams"] >= filter_streams[0]) &
+    (df_filtered["Spotify Streams"] <= filter_streams[1])
 ]
 
 df_filtered = df_filtered[
-    (df_filtered["Track Score"] >= filter_score[0])
-    & (df_filtered["Track Score"] <= filter_score[1])
+    (df_filtered["Track Score"] >= filter_score[0]) &
+    (df_filtered["Track Score"] <= filter_score[1])
 ]
 
 st.header("📂 Dataset filtrado según los 4 filtros")
@@ -130,9 +135,41 @@ st.dataframe(df_filtered)
 
 
 # -----------------------------
-# 5. TOP 1 — MÁS STREAMEADAS
+# 5. TOPS ANALÍTICOS
 # -----------------------------
-st.header("🔥 Top 10 canciones más streameadas – Spotify Streams")
+st.header("📊 Análisis Top 10")
 
-top_streams = df_filtered.sort_values(by="Spotify Streams", ascending=False)
+# -----------------------------
+# TOP 1 – MÁS STREAMEADAS
+# -----------------------------
+st.subheader("🔥 Top 10 canciones más streameadas (Spotify Streams)")
+top_streams = df_filtered.sort_values(by="Spotify Streams", ascending=False).head(10)
+st.dataframe(top_streams)
+
+# -----------------------------
+# TOP 2 – MÁS POPULARES (Track Score o Popularity)
+# -----------------------------
+st.subheader("⭐ Top 10 canciones más populares (Track Score)")
+top_popular = df_filtered.sort_values(by="Track Score", ascending=False).head(10)
+st.dataframe(top_popular)
+
+# -----------------------------
+# TOP 3 – MÁS VISTAS EN YOUTUBE
+# -----------------------------
+if "YouTube Views" in df_filtered.columns:
+    st.subheader("📺 Top 10 canciones con más vistas en YouTube")
+    top_youtube = df_filtered.sort_values(by="YouTube Views", ascending=False).head(10)
+    st.dataframe(top_youtube)
+else:
+    st.warning("El dataset no contiene 'YouTube Views'.")
+
+# -----------------------------
+# TOP 4 – MÁS USADAS EN TIKTOK
+# -----------------------------
+if "TikTok Posts" in df_filtered.columns:
+    st.subheader("🎵 Top 10 canciones más usadas en TikTok")
+    top_tiktok = df_filtered.sort_values(by="TikTok Posts", ascending=False).head(10)
+    st.dataframe(top_tiktok)
+else:
+    st.warning("El dataset no contiene 'TikTok Posts'.")
 
