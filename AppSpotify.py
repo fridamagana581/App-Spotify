@@ -67,4 +67,60 @@ filter_artist = st.sidebar.selectbox("Filtrar por artista:", artists)
 years = ["Todos"] + sorted(df["Release Year"].dropna().unique())
 filter_year = st.sidebar.selectbox("Filtrar por año:", years)
 
-# Filtro
+# Filtro Spotify Streams
+min_streams = int(df["Spotify Streams"].min())
+max_streams = int(df["Spotify Streams"].max())
+
+filter_streams = st.sidebar.slider(
+    "Filtrar por rango de Spotify Streams:",
+    min_value=min_streams,
+    max_value=max_streams,
+    value=(min_streams, max_streams),
+)
+
+# Filtro Track Score
+min_score = int(df["Track Score"].min())
+max_score = int(df["Track Score"].max())
+
+filter_score = st.sidebar.slider(
+    "Filtrar por rango de Track Score:",
+    min_value=min_score,
+    max_value=max_score,
+    value=(min_score, max_score),
+)
+
+
+# -----------------------------
+# 4. APLICAR FILTROS AL DATASET
+# -----------------------------
+df_filtered = df.copy()
+
+if filter_artist != "Todos":
+    df_filtered = df_filtered[df_filtered["Artist"] == filter_artist]
+
+if filter_year != "Todos":
+    df_filtered = df_filtered[df_filtered["Release Year"] == filter_year]
+
+# Streams
+df_filtered = df_filtered[
+    (df_filtered["Spotify Streams"] >= filter_streams[0])
+    & (df_filtered["Spotify Streams"] <= filter_streams[1])
+]
+
+# Track Score
+df_filtered = df_filtered[
+    (df_filtered["Track Score"] >= filter_score[0])
+    & (df_filtered["Track Score"] <= filter_score[1])
+]
+
+st.header("📂 Dataset filtrado según los 4 filtros")
+st.dataframe(df_filtered)
+
+
+# -----------------------------
+# 5. TOP 1 — MÁS STREAMEADAS
+# -----------------------------
+st.header("🔥 Top 10 canciones más streameadas – Spotify Streams")
+
+top_streams = df_filtered.sort_values(by="Spotify Streams", ascending=False).head(10)
+st.dataframe(top_streams)
