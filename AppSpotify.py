@@ -134,5 +134,5 @@ st.dataframe(df_filtered)
 # -----------------------------
 st.header("🔥 Top 10 canciones más streameadas – Spotify Streams")
 
-top_streams = df_filtered.sort_values(by="Spotify Streams", ascending=False
+top_streams = df_filtered.sort_values(by="Spotify Streams", ascending=False)
 
