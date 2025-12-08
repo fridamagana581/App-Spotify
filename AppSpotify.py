@@ -176,21 +176,16 @@ st.altair_chart(chart, use_container_width=True)
 
 
 # ============================================
-# SECCIÓN: TOP CANCIONES POR YOUTUBE LIKES
+# SECCIÓN: TOP CANCIONES POR LIKES EN YOUTUBE
 # ============================================
 
-st.header("📺 Top canciones por YouTube Likes")
-
-st.markdown("Estos filtros son independientes y NO usan los del sidebar ni filtran por año.")
+st.header("🏆 Top canciones por Likes en YouTube")
 
 # --- Filtros específicos de esta sección ---
 col1, col2 = st.columns(2)
 
 with col1:
-    metric_top_yt = st.selectbox(
-        "Métrica (YouTube)",
-        ["YouTube Likes"]   # aquí lo dejamos fijo, pero puedes agregar más si quieres
-    )
+    metric_yt = "YouTube Likes"   # métrica fija
 
 with col2:
     n_top_songs = st.number_input(
@@ -200,8 +195,29 @@ with col2:
         value=10
     )
 
-# --- Crear el top independiente ---
-df_tops_yt = df.copy()   # NO usa filtros del sidebar
+# --- Crear el top independiente usando TODO el dataset ---
+df_tops2 = df.copy()   # Usa df original, NO usa los filtros del sidebar
 
-# Agrupar por canción (Track)
-song_rank
+# Agrupar por canción
+song_rank = df_tops2.groupby("Track")[metric_yt].sum().reset_index()
+
+# Ordenar de mayor a menor
+song_rank = song_rank.sort_values(by=metric_yt, ascending=False).head(n_top_songs)
+
+# Mostrar tabla
+st.subheader(f"Top {n_top_songs} canciones por {metric_yt}")
+st.dataframe(song_rank)
+
+# --- Gráfica ORDENADA de mayor a menor (Altair) ---
+import altair as alt
+
+chart2 = alt.Chart(song_rank).mark_bar().encode(
+    y=alt.Y("Track:N", sort='-x'),
+    x=alt.X(f"{metric_yt}:Q", title=metric_yt),
+    tooltip=["Track", metric_yt]
+).properties(
+    width=700,
+    height=400
+)
+
+st.altair_chart(chart2, use_container_width=True)
