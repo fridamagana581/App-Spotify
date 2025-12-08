@@ -3,6 +3,7 @@ import pandas as pd
 
 st.set_page_config(page_title="Spotify Analysis", layout="wide")
 
+
 # -----------------------------
 # Cargar datos desde GitHub
 # -----------------------------
@@ -11,9 +12,12 @@ def load_data():
     url = "https://raw.githubusercontent.com/fridamagana581/App-Spotify/main/Spotify_limpioo.csv"
     df = pd.read_csv(url, encoding="latin1")
 
-    # Convertir fecha
+    # Convertir fecha sin hora
     if "Release Date" in df.columns:
-        df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
+        df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce").dt.date
+
+    # Crear columna Year para filtros
+    df["Year"] = pd.to_datetime(df["Release Date"], errors="coerce").dt.year
 
     # Convertir numéricos
     numeric_cols = [
@@ -56,7 +60,7 @@ artists = ["Todos"] + sorted(df["Artist"].dropna().unique().tolist())
 artist_filter = st.sidebar.selectbox("Artista", artists)
 
 ## Filtro año
-years = ["Todos"] + sorted(df["Release Date"].dt.year.dropna().unique().tolist())
+years = ["Todos"] + sorted(df["Year"].dropna().unique().tolist())
 year_filter = st.sidebar.selectbox("Año", years)
 
 ## Ordenar por métrica numérica
@@ -65,7 +69,7 @@ order_col = st.sidebar.selectbox(
     df.select_dtypes(include="number").columns.tolist()
 )
 
-## Top N dinámico según tamaño de DF
+## Top N dinámico según tamaño
 total_rows = len(df)
 top_n = st.sidebar.slider("Top N", 1, min(total_rows, 5000), 10)
 
@@ -79,7 +83,7 @@ if artist_filter != "Todos":
     df_view = df_view[df_view["Artist"] == artist_filter]
 
 if year_filter != "Todos":
-    df_view = df_view[df_view["Release Date"].dt.year == int(year_filter)]
+    df_view = df_view[df_view["Year"] == int(year_filter)]
 
 # Orden
 df_view = df_view.sort_values(by=order_col, ascending=False)
