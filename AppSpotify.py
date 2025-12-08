@@ -130,18 +130,21 @@ st.write(row)
 
 st.header("🏆 Top artistas más escuchados")
 
-st.markdown
+st.markdown("Estos filtros son independientes y no usan los del sidebar.")
 
 # --- Filtros específicos de esta sección ---
-col1, col2 = st.columns(2)
+col1, col2, col3 = st.columns(3)
 
 with col1:
+    year_top = st.selectbox("Año", sorted(df["Year"].dropna().unique().tolist()))
+
+with col2:
     metric_top = st.selectbox(
         "Métrica:",
         ["Spotify Streams", "YouTube Likes", "TikTok Posts", "Shazam Counts"]
     )
 
-with col2:
+with col3:
     n_top_artists = st.number_input(
         "Top N artistas",
         min_value=3,
@@ -152,6 +155,9 @@ with col2:
 # --- Crear el top independiente ---
 df_tops = df.copy()
 
+# Filtrar por año seleccionado
+df_tops = df_tops[df_tops["Year"] == year_top]
+
 # Agrupar por artista
 artist_rank = df_tops.groupby("Artist")[metric_top].sum().reset_index()
 
@@ -159,7 +165,7 @@ artist_rank = df_tops.groupby("Artist")[metric_top].sum().reset_index()
 artist_rank = artist_rank.sort_values(by=metric_top, ascending=False).head(n_top_artists)
 
 # Mostrar resultados
-st.subheader(f"Top {n_top_artists} artistas por {metric_top} (dataset 2024)")
+st.subheader(f"Top {n_top_artists} artistas por {metric_top} en {year_top}")
 
 st.dataframe(artist_rank)
 
