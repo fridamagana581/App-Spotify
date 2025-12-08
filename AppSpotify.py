@@ -1,89 +1,104 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 
-#----------------------
-# Cargar datos
-#----------------------
+# ============================
+# CARGA DE DATOS
+# ============================
 @st.cache_data
 def load_data():
-    df = pd.read_csv("Spotify_clean.csv")
+    url = "https://raw.githubusercontent.com/fridamagana581/App-Spotify/main/Spotify_clean.csv"
+    df = pd.read_csv(url, encoding="latin1")
 
-    numeric_cols = [
-        "Spotify Streams",
-        "Spotify Playlist Reach",
-        "YouTube Likes",
-        "TikTok Posts",
-        "TikTok Likes",
-        "TikTok Views"
-    ]
+    # Release date
+    if "Release Date" in df.columns:
+        df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
 
-    for c in numeric_cols:
-        df[c] = pd.to_numeric(df[c], errors="coerce")
-
-    df = df.dropna(subset=["Spotify Streams"])
     return df
 
 df = load_data()
 
-#----------------------
+# Validación
+if df.empty:
+    st.error("El dataframe está vacío. Revisa el archivo CSV.")
+    st.stop()
+
+df = df.reset_index(drop=True)
+
+# ============================
+# TITULO
+# ============================
+st.title("📊 Spotify Best Songs 2024")
+
+# ============================
 # SIDEBAR
-#----------------------
-st.sidebar.title("Filtros")
+# ============================
+st.sidebar.header("Filtros")
 
-# Elegir métrica
-metric = st.sidebar.selectbox(
-    "Selecciona la métrica",
-    [
-        "Spotify Streams",
-        "Spotify Playlist Reach",
-        "YouTube Likes",
-        "TikTok Posts",
-        "TikTok Likes",
-        "TikTok Views"
-    ]
-)
+## ARTISTA
+artists = ["Todos"] + sorted(df["Artist"].dropna().unique().tolist())
+artist_filter = st.sidebar.selectbox("Artista", artists)
 
-# Elegir un número (posición en ranking)
+## AÑO
+years = df["Release Date"].dt.year.dropna().unique()
+years = years.astype(int).tolist()
+years = sorted(years)
+years = ["Todos"] + years
+year_filter = st.sidebar.selectbox("Año", years)
+
+## Ordenar por:
+numeric_cols = df.select_dtypes(include=["float64", "int64", "int"]).columns.tolist()
+order_column = st.sidebar.selectbox("Ordenar por", numeric_cols)
+
+## Top N
+top_n = st.sidebar.slider("Top N", min_value=5, max_value=3000, value=10)
+
+# ============================
+# APLICAR FILTROS
+# ============================
+df_view = df.copy()
+
+if artist_filter != "Todos":
+    df_view = df_view[df_view["Artist"] == artist_filter]
+
+if year_filter != "Todos":
+    df_view = df_view[df_view["Release Date"].dt.year == int(year_filter)]
+
+df_view = df_view.reset_index(drop=True)
+
+# ============================
+# POSICIÓN (CUALQUIER RANK)
+# ============================
+df_len = len(df_view) if len(df_view) > 0 else 1
+
 position = st.sidebar.number_input(
     "¿Qué posición quieres consultar?",
     min_value=1,
-    max_value=len(df),
+    max_value=df_len,
     value=1
 )
 
-#----------------------
-# Título
-#----------------------
-st.title("Dashboard Spotify 🎧")
+# ============================
+# TABLA
+# ============================
+st.subheader("Tabla filtrada")
+st.dataframe(df_view)
 
-st.write(f"Mostrando la canción que ocupa la posición {position} según {metric}")
+# ============================
+# TOP N
+# ============================
+top_df = df_view.sort_values(by=order_column, ascending=False).head(top_n)
 
-#----------------------
-# RANKING automático
-#----------------------
-df_ranked = df.sort_values(by=metric, ascending=False).reset_index(drop=True)
+st.subheader(f"Top {top_n} por {order_column}")
+st.dataframe(top_df)
 
-# obtener la canción en esa posición
-song = df_ranked.iloc[position-1]   # menos 1 porque empieza en 0
+# ============================
+# CANCIÓN EN LA POSICIÓN
+# ============================
+st.subheader(f"🎯 Canción en posición {position}")
+st.write(df_view.iloc[position - 1])
 
-st.write("### Canción encontrada:")
-st.write(song)
-
-#----------------------
-# top gráfica
-#----------------------
-st.subheader(f"Top 10 por {metric}")
-
-top = df_ranked.head(10)
-
-chart = (
-    alt.Chart(top)
-    .mark_bar()
-    .encode(
-        x=metric,
-        y=alt.Y("Track", sort="-x")
-    )
-)
-
-st.altair_chart(chart, use_container_width=True)
+# ============================
+# GRAFICA
+# ============================
+st.subheader("Gráfica")
+st.bar_chart(top_df.set_index("Track")[order_column])
