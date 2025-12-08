@@ -9,60 +9,79 @@ import altair as alt
 def load_data():
     df = pd.read_csv("Spotify_clean.csv")
 
-    # Convertir a numérico
-    df["Spotify Streams"] = pd.to_numeric(df["Spotify Streams"], errors="coerce")
+    numeric_cols = [
+        "Spotify Streams",
+        "Spotify Playlist Reach",
+        "YouTube Likes",
+        "TikTok Posts",
+        "TikTok Likes",
+        "TikTok Views"
+    ]
 
-    # Quitar vacíos
+    for c in numeric_cols:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
     df = df.dropna(subset=["Spotify Streams"])
-    
     return df
 
 df = load_data()
 
 #----------------------
-# Sidebar
+# SIDEBAR
 #----------------------
 st.sidebar.title("Filtros")
 
-streams_min = int(df["Spotify Streams"].min())
-streams_max = int(df["Spotify Streams"].max())
-
-streams_filter = st.sidebar.slider(
-    "Spotify Streams (mín–máx)",
-    streams_min,
-    streams_max,
-    (streams_min, streams_max)
+# Elegir métrica
+metric = st.sidebar.selectbox(
+    "Selecciona la métrica",
+    [
+        "Spotify Streams",
+        "Spotify Playlist Reach",
+        "YouTube Likes",
+        "TikTok Posts",
+        "TikTok Likes",
+        "TikTok Views"
+    ]
 )
 
-# Filtrar el DF
-df_filtered = df[
-    (df["Spotify Streams"] >= streams_filter[0]) &
-    (df["Spotify Streams"] <= streams_filter[1])
-]
+# Elegir un número (posición en ranking)
+position = st.sidebar.number_input(
+    "¿Qué posición quieres consultar?",
+    min_value=1,
+    max_value=len(df),
+    value=1
+)
 
 #----------------------
 # Título
 #----------------------
 st.title("Dashboard Spotify 🎧")
 
-st.write("Datos filtrados por número de streams")
-
-# Mostrar tabla
-st.dataframe(df_filtered.head(20))
-
+st.write(f"Mostrando la canción que ocupa la posición {position} según {metric}")
 
 #----------------------
-# Gráfica simple
+# RANKING automático
 #----------------------
-st.subheader("Top canciones por Streams")
+df_ranked = df.sort_values(by=metric, ascending=False).reset_index(drop=True)
 
-top = df_filtered.nlargest(10, "Spotify Streams")
+# obtener la canción en esa posición
+song = df_ranked.iloc[position-1]   # menos 1 porque empieza en 0
+
+st.write("### Canción encontrada:")
+st.write(song)
+
+#----------------------
+# top gráfica
+#----------------------
+st.subheader(f"Top 10 por {metric}")
+
+top = df_ranked.head(10)
 
 chart = (
     alt.Chart(top)
     .mark_bar()
     .encode(
-        x="Spotify Streams",
+        x=metric,
         y=alt.Y("Track", sort="-x")
     )
 )
