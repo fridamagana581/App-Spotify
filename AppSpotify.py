@@ -128,51 +128,38 @@ st.write(row)
 # SECCIÓN: TOP ARTISTAS MÁS ESCUCHADOS
 # ============================================
 
-st.header("🏆 Top artistas más escuchados")
+st.header("🏆 Top artistas más escuchados)
 
 # --- Filtros específicos de esta sección ---
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
-    year_top = st.selectbox("Año", sorted(df["Year"].dropna().unique().tolist()))
-
-with col2:
     metric_top = st.selectbox(
         "Métrica:",
-        ["Spotify Streams", "YouTube Likes", "TikTok Posts", "Shazam Counts"]
+        ["Spotify Streams", "YouTube Likes", "TikTok Posts", "TikTok Likes", "TikTok Views", "Shazam Counts"]
     )
 
-with col3:
+with col2:
     n_top_artists = st.number_input(
         "Top N artistas",
         min_value=3,
-        max_value=100,
+        max_value=200,
         value=10
     )
 
-# --- Crear el top independiente ---
-df_tops = df.copy()
-
-# Filtrar por año seleccionado
-df_tops = df_tops[df_tops["Year"] == year_top]
+# --- Crear el top independiente usando TODO el dataset ---
+df_tops = df.copy()   # Usa df original, NO usa los filtros del sidebar
 
 # Agrupar por artista
 artist_rank = df_tops.groupby("Artist")[metric_top].sum().reset_index()
 
-# Ordenar y tomar top N
+# Ordenar de mayor a menor
 artist_rank = artist_rank.sort_values(by=metric_top, ascending=False).head(n_top_artists)
 
-import altair as alt
-
-chart = alt.Chart(artist_rank).mark_bar().encode(
-    x=alt.X(metric_top, title=metric_top),
-    y=alt.Y("Artist", sort='-x'),   # 👈 ORDENA DE MAYOR A MENOR
-).properties(
-    width=700,
-    height=400
-)
-
-st.altair_chart(chart, use_container_width=True)
-
+# Mostrar tabla
+st.subheader(f"Top {n_top_artists} artistas por {metric_top}")
 st.dataframe(artist_rank)
 
+# --- Gráfica ORDENADA de mayor a menor ---
+chart_data = artist_rank.sort_values(by=metric_top, ascending=False)
+st.bar_chart(chart_data.set_index("Artist")[metric_top])
