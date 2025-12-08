@@ -128,7 +128,7 @@ st.write(row)
 # SECCIÓN: TOP ARTISTAS MÁS ESCUCHADOS
 # ============================================
 
-st.header("🏆 Top artistas más escuchados)
+st.header("🏆 Top artistas más escuchados")
 
 # --- Filtros específicos de esta sección ---
 col1, col2 = st.columns(2)
