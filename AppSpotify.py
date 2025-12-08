@@ -173,3 +173,33 @@ chart = alt.Chart(artist_rank).mark_bar().encode(
 )
 
 st.altair_chart(chart, use_container_width=True)
+
+
+st.subheader("Top canciones por Likes en YouTube")
+
+# Selección del número Top N
+top_n_yt = st.slider("Selecciona Top N para YT Likes", 5, 50, 10)
+
+# Filtrado (en este caso no hay otros filtros)
+df_sorted_yt = df.sort_values(by="YouTube Likes", ascending=False)
+
+# Obtener Top N
+df_top_yt = df_sorted_yt.head(top_n_yt)
+
+# Mostrar tabla ordenada
+st.dataframe(df_top_yt)
+
+# Gráfica ordenada
+fig_yt = px.bar(
+    df_top_yt,
+    x="Track",              # nombre de la canción
+    y="YouTube Likes",
+    title=f"Top {top_n_yt} Canciones por Likes en YouTube",
+)
+
+# Reordenar barras de mayor a menor
+fig_yt.update_layout(
+    xaxis={'categoryorder':'total descending'}
+)
+
+st.plotly_chart(fig_yt)
