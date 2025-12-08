@@ -1,10 +1,3 @@
-[theme]
-primaryColor="#1DB954"      # Verde estilo Spotify
-backgroundColor="#0E1117"   # Fondo oscuro elegante
-secondaryBackgroundColor="#1B1E24"
-textColor="#FFFFFF"
-font="sans serif"
-
 import streamlit as st
 import pandas as pd
 
