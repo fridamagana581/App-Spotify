@@ -1,88 +1,54 @@
 import streamlit as st
 import pandas as pd
 
-### =====================================
-### Cargar dataset desde GitHub
-### =====================================
+# Cargar dataset (lo puedes cambiar por tu ruta o github raw)
+df = pd.read_csv("Most Streamed Spotify Songs 2024.csv")
 
-url = "https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/spotify_streams_2024_clean.csv"
-df = pd.read_csv(url)
+st.title("Spotify Analysis 2024")
 
-# Convertir fecha
-if "Release Date" in df.columns:
-    df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
-
-
-### =====================================
-### TITLE
-### =====================================
-
-st.title("Spotify Streaming Analysis 2024")
-
-
-### =====================================
-### SIDEBAR
-### =====================================
-
+### --- SIDEBAR --- ###
 st.sidebar.header("Filtros")
 
-# Artist
-artists = ["Todos"] + sorted(df["Artist"].dropna().unique())
+# Artist filter
+artists = ["Todos"] + sorted(df["Artist"].unique())
 artist_filter = st.sidebar.selectbox("Artista", artists)
 
-# Año del release
+# Año del Release Date (si ya lo convertiste)
 if "Release Date" in df.columns:
-    years = sorted(df["Release Date"].dt.year.dropna().unique())
-    year_filter = st.sidebar.selectbox("Año", ["Todos"] + list(years))
+    df["Release Date"] = pd.to_datetime(df["Release Date"])
+    year_filter = st.sidebar.selectbox("Año", ["Todos"] + sorted(df["Release Date"].dt.year.unique()))
 
-# Orden por columna numerica
-numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-order_column = st.sidebar.selectbox("Ordenar por:", numeric_cols)
+# Ordenar por columna
+order_column = st.sidebar.selectbox(
+    "Ordenar por:",
+    df.select_dtypes(include=['float64', 'int64', 'int']).columns
+)
 
-# Top N
+# Cantidad top
 top_n = st.sidebar.slider("Top N", 5, 3000, 10)
 
+### --- FILTROS --- ###
 
-### =====================================
-### APLICAR FILTROS
-### =====================================
+df_view = df.copy()
 
-df_filtered = df.copy()
-
-# filtrar artista
 if artist_filter != "Todos":
-    df_filtered = df_filtered[df_filtered["Artist"] == artist_filter]
+    df_view = df_view[df_view["Artist"] == artist_filter]
 
-# filtrar año
-if "Release Date" in df.columns and year_filter != "Todos":
-    df_filtered = df_filtered[df_filtered["Release Date"].dt.year == int(year_filter)]
+if "year_filter" in locals() and year_filter != "Todos":
+    df_view = df_view[df_view["Release Date"].dt.year == int(year_filter)]
 
-# ordenar
-df_filtered = df_filtered.sort_values(by=order_column, ascending=False)
+### --- ORDENAR --- ###
+df_view = df_view.sort_values(by=order_column, ascending=False)
 
+### --- TABLA --- ###
+st.subheader("Tabla filtrada")
+st.dataframe(df_view)
 
-### =====================================
-### TABLA COMPLETA
-### =====================================
-
-st.subheader("Tabla filtrada completa")
-st.dataframe(df_filtered)
-
-
-### =====================================
-### TOP N
-### =====================================
-
-top_df = df_filtered.head(top_n)
+### --- TOP N --- ###
+top_df = df_view.head(top_n)
 
 st.subheader(f"Top {top_n} por {order_column}")
 st.dataframe(top_df)
 
-
-### =====================================
-### GRÁFICA
-### =====================================
-
-st.subheader("Visualización")
-if "Track" in top_df.columns:
-    st.bar_chart(top_df.set_index("Track")[order_column])
+### --- GRAFICA --- ###
+st.bar_chart(top_df.set_index("Track")[order_column])
