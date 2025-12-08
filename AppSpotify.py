@@ -8,7 +8,7 @@ st.set_page_config(page_title="Spotify Analysis", layout="wide")
 # -----------------------------
 @st.cache_data
 def load_data():
-    url = "https://raw.githubusercontent.com/fridamagana581/App-Spotify/main/Spotify_clean.csv"
+    url = "https://raw.githubusercontent.com/fridamagana581/App-Spotify/main/Spotify_limpioo.csv"
     df = pd.read_csv(url, encoding="latin1")
 
     # Convertir fecha
