@@ -130,7 +130,7 @@ st.write(row)
 
 st.header("🏆 Top artistas más escuchados")
 
-st.markdown("Estos filtros son independientes y no usan los del sidebar.")
+st.markdown()
 
 # --- Filtros específicos de esta sección ---
 col1, col2, col3 = st.columns(3)
