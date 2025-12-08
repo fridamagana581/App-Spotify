@@ -172,4 +172,4 @@ chart = alt.Chart(artist_rank).mark_bar().encode(
     height=400
 )
 
-st.altair_chart(chart, use_container_width=True
+st.altair_chart(chart, use_container_width=True)
