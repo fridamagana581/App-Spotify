@@ -1,60 +1,73 @@
 import streamlit as st
 import pandas as pd
 
-# ============================
-# CARGA DE DATOS
-# ============================
-@st.cache_data
-def load_data():
-    url = "https://raw.githubusercontent.com/fridamagana581/App-Spotify/main/Spotify_clean.csv"
-    df = pd.read_csv(url, encoding="latin1")
+# ----------- CARGA DEL DATASET DESDE GITHUB RAW --------------
+df = pd.read_csv(
+    "https://raw.githubusercontent.com/fridamagana581/App-Spotify/main/Spotify_clean.csv",
+    encoding="latin1"
+)
 
-    # Release date
-    if "Release Date" in df.columns:
-        df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
+# ----------- Limpieza mínima ----------- 
+# Aseguramos tipos numéricos
+num_cols = [
+    "Spotify Streams","Spotify Playlist Reach","YouTube Likes","TikTok Posts",
+    "TikTok Likes","TikTok Views","AirPlay Spins","Amazon Playlist Count",
+    "Pandora Track Stations","Soundcloud Streams","Shazam Counts"
+]
 
-    return df
+for col in num_cols:
+    if col in df.columns:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
-df = load_data()
+# Release Date a fecha
+if "Release Date" in df.columns:
+    df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
 
-# Validación
-if df.empty:
-    st.error("El dataframe está vacío. Revisa el archivo CSV.")
-    st.stop()
+# quitamos NaN
+df = df.dropna().reset_index(drop=True)
 
-df = df.reset_index(drop=True)
+# ------------- STREAMLIT ----------------
 
-# ============================
-# TITULO
-# ============================
-st.title("📊 Spotify Best Songs 2024")
+st.title("🎧 Spotify Analysis 2024")
 
-# ============================
-# SIDEBAR
-# ============================
+st.write("Dataset total:", len(df), "canciones")
+
+# ----------- SIDEBAR -----------
+
 st.sidebar.header("Filtros")
 
-## ARTISTA
-artists = ["Todos"] + sorted(df["Artist"].dropna().unique().tolist())
-artist_filter = st.sidebar.selectbox("Artista", artists)
+## Filtro artista
+if "Artist" in df.columns:
+    artists = ["Todos"] + sorted(df["Artist"].unique())
+    artist_filter = st.sidebar.selectbox("Artista", artists)
+else:
+    artist_filter = "Todos”
 
-## AÑO
-years = df["Release Date"].dt.year.dropna().unique()
-years = years.astype(int).tolist()
-years = sorted(years)
-years = ["Todos"] + years
-year_filter = st.sidebar.selectbox("Año", years)
+## Filtro año
+if "Release Date" in df.columns:
+    years = sorted(df["Release Date"].dt.year.unique())
+    year_filter = st.sidebar.selectbox("Año", ["Todos"] + list(years))
+else:
+    year_filter = "Todos"
 
-## Ordenar por:
-numeric_cols = df.select_dtypes(include=["float64", "int64", "int"]).columns.tolist()
-order_column = st.sidebar.selectbox("Ordenar por", numeric_cols)
+## Ordenar por
+order_column = st.sidebar.selectbox(
+    "Ordenar por:",
+    df.select_dtypes(include=['float64', 'int64', 'int']).columns
+)
 
-## Top N
-top_n = st.sidebar.slider("Top N", min_value=5, max_value=3000, value=10)
+## TOP N seguro
+max_top = max(10, len(df))   # evita error
+top_n = st.sidebar.slider(
+    "Top N",
+    min_value=5,
+    max_value=max_top,
+    value=min(10, max_top)
+)
 
-# ============================
-# APLICAR FILTROS
-# ============================
+
+# ----------- APLICAR FILTROS ------------
+
 df_view = df.copy()
 
 if artist_filter != "Todos":
@@ -63,42 +76,40 @@ if artist_filter != "Todos":
 if year_filter != "Todos":
     df_view = df_view[df_view["Release Date"].dt.year == int(year_filter)]
 
-df_view = df_view.reset_index(drop=True)
+# ----------- ORDENAR ------------
+df_view = df_view.sort_values(by=order_column, ascending=False)
 
-# ============================
-# POSICIÓN (CUALQUIER RANK)
-# ============================
-df_len = len(df_view) if len(df_view) > 0 else 1
 
-position = st.sidebar.number_input(
-    "¿Qué posición quieres consultar?",
-    min_value=1,
-    max_value=df_len,
-    value=1
-)
-
-# ============================
-# TABLA
-# ============================
+# ----------- TABLA GENERAL ------------
 st.subheader("Tabla filtrada")
 st.dataframe(df_view)
 
-# ============================
-# TOP N
-# ============================
-top_df = df_view.sort_values(by=order_column, ascending=False).head(top_n)
+
+# ----------- TOP N ------------
+top_df = df_view.head(top_n)
 
 st.subheader(f"Top {top_n} por {order_column}")
 st.dataframe(top_df)
 
-# ============================
-# CANCIÓN EN LA POSICIÓN
-# ============================
-st.subheader(f"🎯 Canción en posición {position}")
-st.write(df_view.iloc[position - 1])
 
-# ============================
-# GRAFICA
-# ============================
-st.subheader("Gráfica")
+# ----------- CONSULTA POR POSICIÓN ------------
+df_len = len(df)
+max_pos = max(1, df_len)
+
+position = st.sidebar.number_input(
+    "¿Qué posición quieres consultar?",
+    min_value=1,
+    max_value=max_pos,
+    value=1
+)
+
+st.subheader(f"Canción en posición #{position}")
+try:
+    st.write(df_view.iloc[int(position)-1])
+except:
+    st.write("No existe esa posición en este filtro")
+
+
+# ----------- GRAFICAAA ------------
+st.subheader("Gráfica TOP seleccionada")
 st.bar_chart(top_df.set_index("Track")[order_column])
