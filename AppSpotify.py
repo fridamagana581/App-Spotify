@@ -249,9 +249,18 @@ st.dataframe(shazam_rank)
 # --- Gráfica ORDENADA con Altair ---
 import altair as alt
 
-chart_shazam = alt.Chart(shazam_rank).mark_bar().encode(
-    y=alt.Y("Track:N", sort='-x'),   # mayor → menor
-    x=alt.X(f"{metric_shazam}:Q", title=metric_shazam),
-    tooltip=["Track", metric_shazam]
-).properties()
-    width=700,
+chart_shazam = (
+    alt.Chart(shazam_rank)
+    .mark_bar()
+    .encode(
+        y=alt.Y("Track:N", sort='-x'),
+        x=alt.X(f"{metric_shazam}:Q", title=metric_shazam),
+        tooltip=["Track", metric_shazam]
+    )
+    .properties(
+        width=700,
+        height=400
+    )
+)
+
+st.altair_chart(chart_shazam, use_container_width=True)
