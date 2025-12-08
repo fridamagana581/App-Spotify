@@ -162,6 +162,17 @@ artist_rank = df_tops.groupby("Artist")[metric_top].sum().reset_index()
 # Ordenar y tomar top N
 artist_rank = artist_rank.sort_values(by=metric_top, ascending=False).head(n_top_artists)
 
+import altair as alt
+
+chart = alt.Chart(artist_rank).mark_bar().encode(
+    x=alt.X(metric_top, title=metric_top),
+    y=alt.Y("Artist", sort='-x'),   # 👈 ORDENA DE MAYOR A MENOR
+).properties(
+    width=700,
+    height=400
+)
+
+st.altair_chart(chart, use_container_width=True)
 # Mostrar resultados
 st.subheader(f"Top {n_top_artists} artistas por {metric_top} en {year_top}")
 
