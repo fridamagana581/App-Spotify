@@ -1,126 +1,85 @@
-import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# -----------------------------
-# CONFIGURACIÓN DE PÁGINA
-# -----------------------------
-st.set_page_config(layout="wide")
-st.title("🎵 Spotify Analytics Dashboard – Dataset Limpio + Tops con Filtros")
+# 1. Load Data
+file_path = '/content/drive/MyDrive/Colab Notebooks/Práctica limpieza/Most Streamed Spotify Songs 2024.csv'
+df = pd.read_csv(file_path, encoding='latin1')
 
-st.write("""
-Esta aplicación carga, limpia y analiza el dataset **Most Streamed Spotify Songs 2024**, 
-y presenta 4 análisis tipo *Top 10*, todos con los mismos filtros:  
-**Artista, Año, Streams y Track Score**.
-""")
-
-
-# -----------------------------
-# 1. CARGAR ARCHIVO ORIGINAL
-# -----------------------------
-st.header("1. Cargar datos originales")
-
-df = pd.read_csv("Most Streamed Spotify Songs 2024.csv", encoding="latin1")
-st.dataframe(df.head())
-
-
-# -----------------------------
-# 2. PROCESO DE LIMPIEZA
-# -----------------------------
-st.header("2. Limpieza del dataset")
-
-# Asegurar formato de fecha
-df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
-
-# Crear columna Release Year desde Release Date
-df["Release Year"] = df["Release Date"].dt.year
-
-# Limpiar Spotify Streams
-df["Spotify Streams"] = (
-    df["Spotify Streams"]
-    .astype(str)
-    .str.replace(",", "")
-    .str.replace(".", "")
-)
-
-df["Spotify Streams"] = pd.to_numeric(df["Spotify Streams"], errors="coerce")
-
-# Convertir Track Score a numérico
-df["Track Score"] = pd.to_numeric(df["Track Score"], errors="coerce")
-
-# Eliminar filas sin datos importantes
-df = df.dropna(subset=["Artist", "Release Year", "Spotify Streams", "Track Score"])
-
-st.success("Dataset limpiado correctamente ✔")
-st.dataframe(df.head())
-
-
-# -----------------------------
-# 3. SIDEBAR − FILTROS
-# -----------------------------
-st.sidebar.header("Filtros")
-
-# Filtro artista
-artists = ["Todos"] + sorted(df["Artist"].dropna().unique())
-filter_artist = st.sidebar.selectbox("Filtrar por artista:", artists)
-
-# Filtro año
-years = ["Todos"] + sorted(df["Release Year"].dropna().unique())
-filter_year = st.sidebar.selectbox("Filtrar por año:", years)
-
-# Filtro Spotify Streams
-min_streams = int(df["Spotify Streams"].min())
-max_streams = int(df["Spotify Streams"].max())
-
-filter_streams = st.sidebar.slider(
-    "Filtrar por rango de Spotify Streams:",
-    min_value=min_streams,
-    max_value=max_streams,
-    value=(min_streams, max_streams),
-)
-
-# Filtro Track Score
-min_score = int(df["Track Score"].min())
-max_score = int(df["Track Score"].max())
-
-filter_score = st.sidebar.slider(
-    "Filtrar por rango de Track Score:",
-    min_value=min_score,
-    max_value=max_score,
-    value=(min_score, max_score),
-)
-
-
-# -----------------------------
-# 4. APLICAR FILTROS AL DATASET
-# -----------------------------
-df_filtered = df.copy()
-
-if filter_artist != "Todos":
-    df_filtered = df_filtered[df_filtered["Artist"] == filter_artist]
-
-if filter_year != "Todos":
-    df_filtered = df_filtered[df_filtered["Release Year"] == filter_year]
-
-# Streams
-df_filtered = df_filtered[
-    (df_filtered["Spotify Streams"] >= filter_streams[0])
-    & (df_filtered["Spotify Streams"] <= filter_streams[1])
+# 2. Define and drop columns
+# This list is consolidated from all previous drop operations, ensuring 'TikTok Posts' is retained for later analysis.
+all_columns_to_drop = [
+    'TIDAL Popularity',
+    'Explicit Track',
+    'Pandora Streams',
+    'Deezer Playlist Count',
+    'Deezer Playlist Reach',
+    'SiriusXM Spins',
+    'Spotify Playlist Count',
+    'ISRC',
+    'Track Score',
+    'AirPlay Spins',
+    'Amazon Playlist Count',
+    'Pandora Track Stations',
+    'Soundcloud Streams',
+    'TikTok Views',
+    'TikTok Likes',
+    'YouTube Views',
+    'YouTube Playlist Reach',
+    'Apple Music Playlist Count',
+    'All Time Rank',
+    'Spotify Popularity'
 ]
+df = df.drop(columns=all_columns_to_drop, errors='ignore')
 
-# Track Score
-df_filtered = df_filtered[
-    (df_filtered["Track Score"] >= filter_score[0])
-    & (df_filtered["Track Score"] <= filter_score[1])
-]
+# 3. Handle missing values (after column drops)
+df = df.dropna()
 
-st.header("📂 Dataset filtrado según los 4 filtros")
-st.dataframe(df_filtered)
+# 4. Convert 'Release Date' to datetime
+df['Release Date'] = pd.to_datetime(df['Release Date'])
 
+# 5. Filter by year 2024
+df = df[df['Release Date'].dt.year == 2024]
 
-# -----------------------------
-# 5. TOP 1 — MÁS STREAMEADAS
-# -----------------------------
-st.header("🔥 Top 10 canciones más streameadas – Spotify Streams")
+# 6. Clean and convert 'Spotify Streams'
+df['Spotify Streams'] = df['Spotify Streams'].astype(str).str.replace(',', '', regex=False)
+df['Spotify Streams'] = pd.to_numeric(df['Spotify Streams'], errors='coerce')
+df.dropna(subset=['Spotify Streams'], inplace=True)
 
-top_streams = df_filtered.sort_values(by="Spotify Streams", ascending=False).head(10)
-st.dataframe(top_streams)
+# 7. Calculate top 5 artists by Spotify Streams
+top_5_artists_2024 = df.groupby('Artist')['Spotify Streams'].sum().nlargest(5)
+display(top_5_artists_2024)
+
+# 8. Plot top 5 artists by Spotify Streams
+plt.figure(figsize=(10, 6))
+sns.barplot(x=top_5_artists_2024.index, y=top_5_artists_2024.values / 1_000_000_000, palette='viridis')
+plt.title('Top 5 Most Streamed Artists in 2024')
+plt.xlabel('Artist')
+plt.ylabel('Spotify Streams (Billions)')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# 9. Clean and convert 'TikTok Posts' and calculate top 5 songs by TikTok Posts
+# This block is conditionally executed as 'TikTok Posts' might have been dropped by other means if not specifically excluded.
+if 'TikTok Posts' in df.columns:
+    df['TikTok Posts'] = df['TikTok Posts'].astype(str).str.replace(',', '', regex=False)
+    df['TikTok Posts'] = pd.to_numeric(df['TikTok Posts'], errors='coerce')
+    df.dropna(subset=['TikTok Posts'], inplace=True)
+
+    top_5_tiktok_songs = df.groupby('Track')['TikTok Posts'].sum().nlargest(5)
+    display(top_5_tiktok_songs)
+else:
+    print("The 'TikTok Posts' column is not available in the DataFrame. Cannot calculate top TikTok songs.")
+
+# 10. Plot top 5 songs by TikTok Posts
+# Only attempt to plot if top_5_tiktok_songs was successfully calculated and is not empty
+if 'TikTok Posts' in df.columns and 'top_5_tiktok_songs' in locals() and not top_5_tiktok_songs.empty:
+    plt.figure(figsize=(12, 7))
+    sns.barplot(x=top_5_tiktok_songs.index, y=top_5_tiktok_songs.values / 1_000_000, palette='magma')
+    plt.title('Top 5 Songs by TikTok Posts')
+    plt.xlabel('Track')
+    plt.ylabel('Number of TikTok Posts (Millions)')
+    plt.xticks(rotation=60, ha='right')
+    plt.tight_layout()
+    plt.show()
