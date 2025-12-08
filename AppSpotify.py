@@ -264,3 +264,50 @@ chart_shazam = (
 )
 
 st.altair_chart(chart_shazam, use_container_width=True)
+
+
+st.header("🏆 Top canciones más usadas en TikTok")
+
+
+# --- Filtro: Top N canciones ---
+n_top_tiktok = st.number_input(
+    "Top N canciones (TikTok Posts)",
+    min_value=3,
+    max_value=200,
+    value=10
+)
+
+# --- Métrica fija ---
+metric_tiktok = "TikTok Posts"
+
+
+df_tiktok = df.copy()
+
+# Agrupar por canción sumando TikTok Posts
+tiktok_rank = df_tiktok.groupby("Track")[metric_tiktok].sum().reset_index()
+
+# Ordenar de mayor a menor + Top N
+tiktok_rank = tiktok_rank.sort_values(by=metric_tiktok, ascending=False).head(n_top_tiktok)
+
+# Mostrar tabla ordenada
+st.subheader(f"Top {n_top_tiktok} canciones por {metric_tiktok}")
+st.dataframe(tiktok_rank)
+
+# --- Gráfica ORDENADA con Altair ---
+import altair as alt
+
+chart_tiktok = (
+    alt.Chart(tiktok_rank)
+    .mark_bar()
+    .encode(
+        y=alt.Y("Track:N", sort='-x'),  # mayor → menor
+        x=alt.X(f"{metric_tiktok}:Q", title=metric_tiktok),
+        tooltip=["Track", metric_tiktok]
+    )
+    .properties(
+        width=700,
+        height=400
+    )
+)
+
+st.altair_chart(chart_tiktok, use_container_width=True)
