@@ -135,9 +135,6 @@ st.markdown("Estos filtros son independientes y no usan los del sidebar.")
 # --- Filtros específicos de esta sección ---
 col1, col2, col3 = st.columns(3)
 
-with col1:
-    year_top = st.selectbox("Año", sorted(df["Year"].dropna().unique().tolist()))
-
 with col2:
     metric_top = st.selectbox(
         "Métrica:",
