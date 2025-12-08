@@ -176,5 +176,3 @@ st.altair_chart(chart, use_container_width=True)
 
 st.dataframe(artist_rank)
 
-st.bar_chart(artist_rank.set_index("Artist")[metric_top])
-
