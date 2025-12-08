@@ -253,5 +253,5 @@ chart_shazam = alt.Chart(shazam_rank).mark_bar().encode(
     y=alt.Y("Track:N", sort='-x'),   # mayor → menor
     x=alt.X(f"{metric_shazam}:Q", title=metric_shazam),
     tooltip=["Track", metric_shazam]
-).properties(
+).properties()
     width=700,
