@@ -161,5 +161,15 @@ st.subheader(f"Top {n_top_artists} artistas por {metric_top}")
 st.dataframe(artist_rank)
 
 # --- Gráfica ORDENADA de mayor a menor ---
-chart_data = artist_rank.sort_values(by=metric_top, ascending=False)
-st.bar_chart(chart_data.set_index("Artist")[metric_top])
+import altair as alt
+
+chart = alt.Chart(artist_rank).mark_bar().encode(
+    y=alt.Y("Artist:N", sort='-x'),  # Ordena de MAYOR a MENOR
+    x=alt.X(f"{metric_top}:Q", title=metric_top),
+    tooltip=["Artist", metric_top]
+).properties(
+    width=700,
+    height=400
+)
+
+st.altair_chart(chart, use_container_width=True)
