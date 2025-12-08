@@ -173,3 +173,48 @@ chart = alt.Chart(artist_rank).mark_bar().encode(
 )
 
 st.altair_chart(chart, use_container_width=True)
+
+
+# ============================================
+# SECCIÓN: TOP CANCIONES POR YOUTUBE LIKES
+# ============================================
+
+st.header("🏆 Top canciones por Likes en YouTube")
+
+# --- Filtro: Top N canciones ---
+n_top_songs = st.number_input(
+    "Top N canciones",
+    min_value=3,
+    max_value=200,
+    value=10
+)
+
+# --- Métrica fija ---
+metric_yt = "YouTube Likes"
+
+# Copia del dataset (sin filtros del sidebar)
+df_yt = df.copy()
+
+# Agrupar por canción sumando YouTube Likes
+song_rank = df_yt.groupby("Track")[metric_yt].sum().reset_index()
+
+# Orden de mayor a menor + Top N
+song_rank = song_rank.sort_values(by=metric_yt, ascending=False).head(n_top_songs)
+
+# Mostrar tabla ordenada
+st.subheader(f"Top {n_top_songs} canciones por {metric_yt}")
+st.dataframe(song_rank)
+
+# --- Gráfica ORDENADA con Altair ---
+import altair as alt
+
+chart_yt = alt.Chart(song_rank).mark_bar().encode(
+    y=alt.Y("Track:N", sort='-x'),   # Ordenar de mayor a menor
+    x=alt.X(f"{metric_yt}:Q", title=metric_yt),
+    tooltip=["Track", metric_yt]
+).properties(
+    width=700,
+    height=400
+)
+
+st.altair_chart(chart_yt, use_container_width=True)
