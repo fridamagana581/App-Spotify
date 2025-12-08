@@ -172,10 +172,4 @@ chart = alt.Chart(artist_rank).mark_bar().encode(
     height=400
 )
 
-st.altair_chart(chart, use_container_width=True)
-# Mostrar resultados
-st.subheader(f"Top {n_top_artists} artistas por {metric_top} en {year_top}")
-
-st.dataframe(artist_rank)
-
-st.bar_chart(artist_rank.set_index("Artist")[metric_top])
+st.altair_chart(chart, use_container_width=True
