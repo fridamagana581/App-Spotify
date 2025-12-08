@@ -218,3 +218,40 @@ chart_yt = alt.Chart(song_rank).mark_bar().encode(
 )
 
 st.altair_chart(chart_yt, use_container_width=True)
+
+
+st.header("🏆 Top canciones más buscadas en Shazam")
+
+# --- Filtro: Top N canciones ---
+n_top_shazam = st.number_input(
+    "Top N canciones (Shazam)",
+    min_value=3,
+    max_value=200,
+    value=10
+)
+
+# --- Métrica fija ---
+metric_shazam = "Shazam Counts"
+
+# Copiar dataset (sin filtros del sidebar)
+df_shazam = df.copy()
+
+# Agrupar por canción sumando Shazam Counts
+shazam_rank = df_shazam.groupby("Track")[metric_shazam].sum().reset_index()
+
+# Ordenar de mayor a menor + Top N
+shazam_rank = shazam_rank.sort_values(by=metric_shazam, ascending=False).head(n_top_shazam)
+
+# Mostrar tabla ordenada
+st.subheader(f"Top {n_top_shazam} canciones por {metric_shazam}")
+st.dataframe(shazam_rank)
+
+# --- Gráfica ORDENADA con Altair ---
+import altair as alt
+
+chart_shazam = alt.Chart(shazam_rank).mark_bar().encode(
+    y=alt.Y("Track:N", sort='-x'),   # mayor → menor
+    x=alt.X(f"{metric_shazam}:Q", title=metric_shazam),
+    tooltip=["Track", metric_shazam]
+).properties(
+    width=700,
