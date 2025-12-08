@@ -1,90 +1,88 @@
 import streamlit as st
 import pandas as pd
-import altair as alt
 
-# ---------------------
-# Cargar datos
-# ---------------------
+st.set_page_config(page_title="Dashboard Spotify", layout="wide")
+
 @st.cache_data
 def load_data():
-    df = pd.read_csv("Spotify_clean.csv")
+    df = pd.read_csv("dataset.csv")   # Cambia al nombre real
+    df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
+
+    # Convertir streams a numéricos (están como object)
+    numeric_cols = [
+        "Spotify Streams", "Spotify Playlist Reach", "YouTube Likes",
+        "TikTok Posts", "TikTok Likes", "TikTok Views",
+        "AirPlay Spins", "Amazon Playlist Count", "Pandora Track Stations",
+        "Soundcloud Streams", "Shazam Counts"
+    ]
+    for c in numeric_cols:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+
     return df
 
 df = load_data()
 
-st.title("Dashboard Spotify 🎵")
+st.title("Dashboard Spotify 📈")
 
-# =========================
-# Sidebar
-# =========================
+# ---- SIDEBAR -------------------------------------------------------
+
 st.sidebar.header("Filtros")
 
-# --- Filtro artista ---
-artistas = ["Todos"] + sorted(df["artist_name"].dropna().unique().tolist())
-artist_filter = st.sidebar.selectbox("Artista", artistas)
+# lista artistas
+artists_list = ["Todos"] + sorted(df["Artist"].dropna().unique().tolist())
+artist_filter = st.sidebar.selectbox("Artista", artists_list)
 
-# --- Filtro género ---
-generos = ["Todos"] + sorted(df["track_genre"].dropna().unique().tolist())
-genre_filter = st.sidebar.selectbox("Género", generos)
+# año
+years = df["Release Date"].dt.year.dropna().unique()
+years_list = ["Todos"] + sorted(years.tolist())
+year_filter = st.sidebar.selectbox("Año (Release Date)", years_list)
 
-# --- Filtro año dinámico (usuario escribe) ---
-min_year = int(df["year"].min())
-max_year = int(df["year"].max())
-
-year_selected = st.sidebar.number_input(
-    "Año (puedes escribir cualquier año como 2020 o 2060)",
-    min_value=min_year,
-    max_value=max_year,
-    value=min_year,
+# posición (index de la tabla)
+max_pos = max(1, len(df))
+position = st.sidebar.number_input(
+    "¿Qué fila quieres consultar?",
+    min_value=1,
+    max_value=max_pos,
+    value=1,
     step=1
 )
 
-# ------------------------
-# Filtros en el DataFrame
-# ------------------------
-df_filtered = df.copy()
+# top N
+top_n = st.sidebar.slider("Top N (por Spotify Streams)", min_value=1, max_value=max_pos, value=10)
 
+# ---- FILTROS -------------------------------------------------------
+
+filtered = df.copy()
+
+# artista
 if artist_filter != "Todos":
-    df_filtered = df_filtered[df_filtered["artist_name"] == artist_filter]
+    filtered = filtered[ filtered["Artist"] == artist_filter ]
 
-if genre_filter != "Todos":
-    df_filtered = df_filtered[df_filtered["track_genre"] == genre_filter]
+# año
+if year_filter != "Todos":
+    filtered = filtered[ filtered["Release Date"].dt.year == int(year_filter) ]
 
-if year_selected:
-    df_filtered = df_filtered[df_filtered["year"] == year_selected]
+st.subheader("Resultados filtrados")
+st.write(filtered)
 
-# ------------------------
-# Métricas
-# ------------------------
-st.subheader("Métricas")
+# ---- REGISTRO INDIVIDUAL ------------------------------------------
 
-st.metric("Total de Canciones", len(df_filtered))
+st.subheader("Registro individual")
 
-if "popularity" in df_filtered.columns:
-    st.metric("Popularidad Promedio",
-              round(df_filtered["popularity"].mean(), 2))
-
-# ------------------------
-# Gráfica Popularidad
-# ------------------------
-st.subheader("Popularidad por Canción")
-
-if not df_filtered.empty:
-    chart = (
-        alt.Chart(df_filtered)
-        .mark_bar()
-        .encode(
-            x=alt.X("track_name:N", sort='-y'),
-            y="popularity:Q",
-            tooltip=["track_name", "artist_name", "popularity"]
-        )
-    )
-    st.altair_chart(chart, use_container_width=True)
+pos = min(position, len(filtered)) - 1
+if len(filtered) > 0:
+    st.write(filtered.iloc[pos])
 else:
-    st.warning("No hay datos con esos filtros.")
+    st.warning("No hay registros con ese filtro.")
 
-# ------------------------
-# Mostrar tabla
-# ------------------------
-st.subheader("Tabla de datos filtrados")
-st.dataframe(df_filtered)
+# ---- TOP ----------------------------------------------------------
+
+st.subheader(f"Top {top_n} por Spotify Streams")
+
+top_data = (
+    filtered
+    .sort_values(by="Spotify Streams", ascending=False)
+    .head(top_n)
+)
+
+st.write(top_data)
