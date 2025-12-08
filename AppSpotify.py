@@ -1,54 +1,62 @@
 import streamlit as st
 import pandas as pd
 
-# Cargar dataset (lo puedes cambiar por tu ruta o github raw)
-df = pd.read_csv("Most Streamed Spotify Songs 2024.csv")
+# --- Cargar dataset limpio desde GitHub ---
+url = "https://raw.githubusercontent.com/fridamagana581/App-Spotify/main/Spotify_clean.csv"
+df = pd.read_csv(url, encoding='latin1')
 
-st.title("Spotify Analysis 2024")
+st.title("🎵 Spotify Analysis 2024")
 
-### --- SIDEBAR --- ###
+### --- Sidebar: Filtros básicos --- ###
 st.sidebar.header("Filtros")
 
-# Artist filter
-artists = ["Todos"] + sorted(df["Artist"].unique())
-artist_filter = st.sidebar.selectbox("Artista", artists)
+# Filtro por artista
+artists = ["Todos"] + sorted(df["Artist"].dropna().unique())
+artist_filter = st.sidebar.selectbox("Artista:", artists)
 
-# Año del Release Date (si ya lo convertiste)
-if "Release Date" in df.columns:
-    df["Release Date"] = pd.to_datetime(df["Release Date"])
-    year_filter = st.sidebar.selectbox("Año", ["Todos"] + sorted(df["Release Date"].dt.year.unique()))
+# Filtro por año de release
+df["Release Date"] = pd.to_datetime(df["Release Date"], errors="coerce")
+years = ["Todos"] + sorted(df["Release Date"].dt.year.dropna().unique())
+year_filter = st.sidebar.selectbox("Año:", years)
 
-# Ordenar por columna
-order_column = st.sidebar.selectbox(
-    "Ordenar por:",
-    df.select_dtypes(include=['float64', 'int64', 'int']).columns
-)
+# Filtro por Streams
+streams_min = int(df["Spotify Streams"].min())
+streams_max = int(df["Spotify Streams"].max())
+streams_range = st.sidebar.slider("Rango de Streams:", streams_min, streams_max, (streams_min, streams_max))
 
-# Cantidad top
-top_n = st.sidebar.slider("Top N", 5, 3000, 10)
+# Filtro por Track Score
+score_min = int(df["Track Score"].min())
+score_max = int(df["Track Score"].max())
+score_range = st.sidebar.slider("Rango de Track Score:", score_min, score_max, (score_min, score_max))
 
-### --- FILTROS --- ###
-
-df_view = df.copy()
+### --- Aplicar filtros --- ###
+df_filtered = df.copy()
 
 if artist_filter != "Todos":
-    df_view = df_view[df_view["Artist"] == artist_filter]
+    df_filtered = df_filtered[df_filtered["Artist"] == artist_filter]
 
-if "year_filter" in locals() and year_filter != "Todos":
-    df_view = df_view[df_view["Release Date"].dt.year == int(year_filter)]
+df_filtered = df_filtered[
+    (df_filtered["Release Date"].dt.year == int(year_filter)) &
+    (df_filtered["Spotify Streams"] >= streams_range[0]) &
+    (df_filtered["Spotify Streams"] <= streams_range[1]) &
+    (df_filtered["Track Score"] >= score_range[0]) &
+    (df_filtered["Track Score"] <= score_range[1])
+]
 
-### --- ORDENAR --- ###
-df_view = df_view.sort_values(by=order_column, ascending=False)
+### --- Mostrar tabla filtrada --- ###
+st.subheader("🎯 Datos filtrados")
+st.dataframe(df_filtered)
 
-### --- TABLA --- ###
-st.subheader("Tabla filtrada")
-st.dataframe(df_view)
+### --- Top N dinámico --- ###
+top_n = st.sidebar.slider("Top N canciones:", 5, 100, 10)
 
-### --- TOP N --- ###
-top_df = df_view.head(top_n)
+order_column = st.sidebar.selectbox("Ordenar por:", ["Spotify Streams","Track Score"] + 
+                                     [col for col in df.columns if "TikTok Posts" in col or "YouTube Views" in col])
 
-st.subheader(f"Top {top_n} por {order_column}")
-st.dataframe(top_df)
+df_top = df_filtered.sort_values(by=order_column, ascending=False).head(top_n)
 
-### --- GRAFICA --- ###
-st.bar_chart(top_df.set_index("Track")[order_column])
+st.subheader(f"🏆 Top {top_n} por {order_column}")
+st.dataframe(df_top)
+
+st.subheader("📊 Gráfica Top")
+st.bar_chart(df_top.set_index("Track")[order_column])
