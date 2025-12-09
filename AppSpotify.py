@@ -320,3 +320,105 @@ df_global = pd.read_csv("Spotify_limpioo.csv")
 
 # Excel nuestro
 df_nuestro = pd.read_csv("Misdatos.csv")
+
+
+
+st.header("📊 Comparación: Global vs Datos personales")
+
+# --- Elegir qué tipo de top mostrar ---
+opcion = st.selectbox(
+    "¿Qué quieres comparar?",
+    ["Top artistas más escuchados",
+     "Top álbumes más escuchados",
+     "Top canciones más escuchadas"]
+)
+
+# Columnas visuales
+col1, col2 = st.columns(2)
+
+# ------------------------
+# TOP ARTISTAS
+# ------------------------
+if opcion == "Top artistas más escuchados":
+
+    with col1:
+        st.subheader("🌎 Global – Top artistas")
+        top_global = (
+            df_global.groupby("Artist")["Spotify Streams"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(10)
+            .reset_index()
+        )
+        st.dataframe(top_global)
+
+    with col2:
+        st.subheader("👤 Datos amiga – Top artistas")
+        top_amiga = (
+            df_amiga["artist_name"]
+            .value_counts()
+            .head(10)
+            .reset_index()
+            .rename(columns={"index": "Artist", "artist_name": "Reproducciones"})
+        )
+        st.dataframe(top_amiga)
+
+
+# ------------------------
+# TOP ÁLBUMES
+# ------------------------
+elif opcion == "Top álbumes más escuchados":
+
+    with col1:
+        st.subheader("🌎 Global – Top álbumes (por streams)")
+        if "Album" in df_global.columns:
+            top_global = (
+                df_global.groupby("Album")["Spotify Streams"]
+                .sum()
+                .sort_values(ascending=False)
+                .head(10)
+                .reset_index()
+            )
+            st.dataframe(top_global)
+        
+
+    with col2:
+        st.subheader("👤 Datos nuestros – Top álbumes")
+        if "album_name" in df_amiga.columns:
+            top_amiga = (
+                df_amiga["album_name"]
+                .value_counts()
+                .head(10)
+                .reset_index()
+                .rename(columns={"index":"Album","album_name":"Reproducciones"})
+            )
+            st.dataframe(top_nusetro)
+       
+
+
+# ------------------------
+# TOP CANCIONES
+# ------------------------
+elif opcion == "Top canciones más escuchadas":
+
+    with col1:
+        st.subheader("🌎 Global – Top canciones")
+        top_global = (
+            df_global.groupby("Track")["Spotify Streams"]
+            .sum()
+            .sort_values(ascending=False)
+            .head(10)
+            .reset_index()
+        )
+        st.dataframe(top_global)
+
+    with col2:
+        st.subheader("👤 Datos amiga – Top canciones")
+        top_amiga = (
+            df_amiga["song_name"]
+            .value_counts()
+            .head(10)
+            .reset_index()
+            .rename(columns={"index":"Track","song_name":"Reproducciones"})
+        )
+        st.dataframe(top_amiga)
