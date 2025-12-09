@@ -318,14 +318,12 @@ import pandas as pd
 # Excel global
 df_global = pd.read_csv("Spotify_limpioo.csv")
 
-# Excel nuestro
+# Excel nuestro (tu amiga)
 df_nuestro = pd.read_csv("Misdatos.csv")
-
-
 
 st.header("📊 Comparación: Global vs Datos personales")
 
-# --- Elegir qué tipo de top mostrar ---
+# Selección del análisis
 opcion = st.selectbox(
     "¿Qué quieres comparar?",
     ["Top artistas más escuchados",
@@ -333,7 +331,6 @@ opcion = st.selectbox(
      "Top canciones más escuchadas"]
 )
 
-# Columnas visuales
 col1, col2 = st.columns(2)
 
 # ------------------------
@@ -354,14 +351,15 @@ if opcion == "Top artistas más escuchados":
 
     with col2:
         st.subheader("👤 Datos nuestros – Top artistas")
-        top_amiga = (
-            df_amiga["artist_name"]
+        top_nuestro = (
+            df_nuestro["artist_name"]
             .value_counts()
             .head(10)
             .reset_index()
             .rename(columns={"index": "Artist", "artist_name": "Reproducciones"})
         )
-        st.dataframe(top_amiga)
+        st.dataframe(top_nuestro)
+
 
 
 # ------------------------
@@ -371,29 +369,34 @@ elif opcion == "Top álbumes más escuchados":
 
     with col1:
         st.subheader("🌎 Global – Top álbumes (por streams)")
-        if "Album" in df_global.columns:
+        if "Album Name" in df_global.columns:
             top_global = (
-                df_global.groupby("Album")["Spotify Streams"]
+                df_global.groupby("Album Name")["Spotify Streams"]
                 .sum()
                 .sort_values(ascending=False)
                 .head(10)
                 .reset_index()
+                .rename(columns={"Album Name": "Album"})
             )
             st.dataframe(top_global)
-        
+        else:
+            st.warning("⚠️ El dataset global no tiene la columna 'Album Name'.")
+
 
     with col2:
         st.subheader("👤 Datos nuestros – Top álbumes")
-        if "album_name" in df_amiga.columns:
-            top_amiga = (
-                df_amiga["album_name"]
+        if "album_name" in df_nuestro.columns:
+            top_nuestro = (
+                df_nuestro["album_name"]
                 .value_counts()
                 .head(10)
                 .reset_index()
-                .rename(columns={"index":"Album","album_name":"Reproducciones"})
+                .rename(columns={"index": "Album", "album_name": "Reproducciones"})
             )
-            st.dataframe(top_nusetro)
-       
+            st.dataframe(top_nuestro)
+        else:
+            st.warning("⚠️ Tu archivo no tiene la columna 'album_name'.")
+
 
 
 # ------------------------
@@ -413,12 +416,12 @@ elif opcion == "Top canciones más escuchadas":
         st.dataframe(top_global)
 
     with col2:
-        st.subheader("👤 Datos amiga – Top canciones")
-        top_amiga = (
-            df_amiga["song_name"]
+        st.subheader("👤 Datos nuestros – Top canciones")
+        top_nuestro = (
+            df_nuestro["song_name"]
             .value_counts()
             .head(10)
             .reset_index()
-            .rename(columns={"index":"Track","song_name":"Reproducciones"})
+            .rename(columns={"index": "Track", "song_name": "Reproducciones"})
         )
-        st.dataframe(top_amiga)
+        st.dataframe(top_nuestro)
