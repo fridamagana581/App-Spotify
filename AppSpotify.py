@@ -328,7 +328,8 @@ opcion = st.selectbox(
     "¿Qué quieres comparar?",
     ["Top artistas más escuchados",
      "Top álbumes más escuchados",
-     "Top canciones más escuchadas"]
+     "Top canciones más escuchadas
+     "Coincidencias entre datasets"]
 )
 
 col1, col2 = st.columns(2)
@@ -379,8 +380,6 @@ elif opcion == "Top álbumes más escuchados":
                 .rename(columns={"Album Name": "Album"})
             )
             st.dataframe(top_global)
-        else:
-            st.warning("⚠️ El dataset global no tiene la columna 'Album Name'.")
 
 
     with col2:
@@ -394,8 +393,6 @@ elif opcion == "Top álbumes más escuchados":
                 .rename(columns={"index": "Album", "album_name": "Reproducciones"})
             )
             st.dataframe(top_nuestro)
-        else:
-            st.warning("⚠️ Tu archivo no tiene la columna 'album_name'.")
 
 
 
@@ -425,3 +422,47 @@ elif opcion == "Top canciones más escuchadas":
             .rename(columns={"index": "Track", "song_name": "Reproducciones"})
         )
         st.dataframe(top_nuestro)
+
+# ------------------------
+# COINCIDENCIAS ENTRE DATASETS
+# ------------------------
+elif opcion == "Coincidencias entre datasets":
+
+    st.subheader("🔍 Coincidencias entre el dataset global y tus datos")
+
+    # --- Coincidencias de artistas ---
+    artistas_global = set(df_global["Artist"].dropna().str.lower())
+    artistas_nuestro = set(df_nuestro["artist_name"].dropna().str.lower())
+
+    artistas_comunes = artistas_global.intersection(artistas_nuestro)
+
+    st.write("### 👥 Artistas en común")
+    if len(artistas_comunes) > 0:
+        st.success(f"Se encontraron **{len(artistas_comunes)} artistas en común**.")
+        st.dataframe(pd.DataFrame(sorted(artistas_comunes), columns=["Artista"]))
+
+
+    # --- Coincidencias de álbumes ---
+    if "Album Name" in df_global.columns and "album_name" in df_nuestro.columns:
+
+        albums_global = set(df_global["Album Name"].dropna().str.lower())
+        albums_nuestro = set(df_nuestro["album_name"].dropna().str.lower())
+
+        albums_comunes = albums_global.intersection(albums_nuestro)
+
+        st.write("### 💿 Álbumes en común")
+        if len(albums_comunes) > 0:
+            st.success(f"Se encontraron **{len(albums_comunes)} álbumes en común**.")
+            st.dataframe(pd.DataFrame(sorted(albums_comunes), columns=["Álbum"]))
+
+
+    # --- Coincidencias de canciones ---
+    songs_global = set(df_global["Track"].dropna().str.lower())
+    songs_nuestro = set(df_nuestro["song_name"].dropna().str.lower())
+
+    canciones_comunes = songs_global.intersection(songs_nuestro)
+
+    st.write("### 🎶 Canciones en común")
+    if len(canciones_comunes) > 0:
+        st.success(f"Se encontraron **{len(canciones_comunes)} canciones en común**.")
+        st.dataframe(pd.DataFrame(sorted(canciones_comunes), columns=["Canción"]))
