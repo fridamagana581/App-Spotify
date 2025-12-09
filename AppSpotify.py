@@ -326,10 +326,12 @@ st.header("📊 Comparación: Global vs Datos personales")
 # Selección del análisis
 opcion = st.selectbox(
     "¿Qué quieres comparar?",
-    ["Top artistas más escuchados",
-     "Top álbumes más escuchados",
-     "Top canciones más escuchadas
-     "Coincidencias entre datasets"]
+    [
+        "Top artistas más escuchados",
+        "Top álbumes más escuchados",
+        "Top canciones más escuchadas",
+        "Coincidencias entre datasets"
+    ]
 )
 
 col1, col2 = st.columns(2)
