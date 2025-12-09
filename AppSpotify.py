@@ -1,3 +1,20 @@
+[theme]
+# Color de fondo principal (un blanco suave o gris claro)
+backgroundColor="#FFFFFF" 
+
+# Color del fondo del sidebar y de los contenedores/cajas de texto
+secondaryBackgroundColor="#F0F2F6" 
+
+# Color principal para texto (negro)
+textColor="#1C1C1C"
+
+# Color primario: se usa para botones, sliders, enlaces, y st.success
+# Usamos el verde de Spotify (#1ED760)
+primaryColor="#1ED760" 
+
+# Fuente de la interfaz
+font="sans serif"
+
 import streamlit as st
 import pandas as pd
 
