@@ -316,7 +316,7 @@ st.altair_chart(chart_tiktok, use_container_width=True)
 import pandas as pd
 
 # Excel global
-df_global = pd.read_excel("Spotify_limpioo.csv")
+df_global = pd.read_csv("Spotify_limpioo.csv")
 
 # Excel nuestro
-df_nuestro = pd.read_excel("Misdatos.csv")
+df_nuestro = pd.read_csv("Misdatos.csv")
