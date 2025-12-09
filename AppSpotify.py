@@ -353,7 +353,7 @@ if opcion == "Top artistas más escuchados":
         st.dataframe(top_global)
 
     with col2:
-        st.subheader("👤 Datos amiga – Top artistas")
+        st.subheader("👤 Datos nuestros – Top artistas")
         top_amiga = (
             df_amiga["artist_name"]
             .value_counts()
